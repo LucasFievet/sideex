@@ -7059,6 +7059,22 @@ bot.events.KeyboardEventFactory_ = function(a, b, c) {
 };
 goog.inherits(bot.events.KeyboardEventFactory_, bot.events.EventFactory_);
 bot.events.KeyboardEventFactory_.prototype.create = function(a, b) {
+    var o = goog.dom.getOwnerDocument(a);
+    var d = goog.dom.getWindow(o);
+    var c = new KeyboardEvent(this.type_, {
+        bubbles: this.bubbles_,
+        cancelable: this.cancelable_,
+        view: d,
+        altKey: b.altKey,
+        ctrlKey: b.ctrlKey,
+        shiftKey: b.shiftKey,
+        keyCode: b.charCode || b.keyCode,
+        charCode: b.charCode,
+        key: b.key
+    });
+    return c;
+/*
+
     var c = goog.dom.getOwnerDocument(a);
     if (goog.userAgent.GECKO) {
         var d = goog.dom.getWindow(c),
@@ -7070,6 +7086,7 @@ bot.events.KeyboardEventFactory_.prototype.create = function(a, b) {
         bot.userAgent.IE_DOC_PRE9 ? c = c.createEventObject() : (c = c.createEvent("Events"), c.initEvent(this.type_, this.bubbles_, this.cancelable_)), c.altKey = b.altKey, c.ctrlKey = b.ctrlKey, c.metaKey = b.metaKey, c.shiftKey = b.shiftKey, c.keyCode = b.charCode || b.keyCode, goog.userAgent.WEBKIT && (c.charCode = this == bot.events.EventType.KEYPRESS ? c.keyCode : 0);
     }
     return c;
+*/
 };
 bot.events.TouchEventFactory_ = function(a, b, c) {
     bot.events.EventFactory_.call(this, a, b, c);
@@ -8292,21 +8309,22 @@ bot.Keyboard = function(a) {
 };
 goog.inherits(bot.Keyboard, bot.Device);
 bot.Keyboard.CHAR_TO_KEY_ = {};
-bot.Keyboard.newKey_ = function(a, b, c) {
+bot.Keyboard.newKey_ = function(a, b, c, key) {
     goog.isObject(a) && (a = goog.userAgent.GECKO ? a.gecko : a.ieWebkit);
-    a = new bot.Keyboard.Key(a, b, c);
+    a = new bot.Keyboard.Key(a, b, c, key);
     !b || b in bot.Keyboard.CHAR_TO_KEY_ && !c || (bot.Keyboard.CHAR_TO_KEY_[b] = { key: a, shift: !1 }, c && (bot.Keyboard.CHAR_TO_KEY_[c] = { key: a, shift: !0 }));
     return a;
 };
-bot.Keyboard.Key = function(a, b, c) {
+bot.Keyboard.Key = function(a, b, c, key) {
     this.code = a;
     this.character = b || null;
     this.shiftChar = c || this.character;
+    this.key = key || undefined;
 };
 bot.Keyboard.Keys = {
     BACKSPACE: bot.Keyboard.newKey_(8),
     TAB: bot.Keyboard.newKey_(9),
-    ENTER: bot.Keyboard.newKey_(13),
+    ENTER: bot.Keyboard.newKey_(13, undefined, undefined, 'Enter'),
     SHIFT: bot.Keyboard.newKey_(16),
     CONTROL: bot.Keyboard.newKey_(17),
     ALT: bot.Keyboard.newKey_(18),
@@ -8609,7 +8627,7 @@ bot.Keyboard.prototype.fireKeyEvent_ = function(a, b, c) {
     if (goog.isNull(b.code)) {
         throw new bot.Error(bot.ErrorCode.UNKNOWN_ERROR, "Key must have a keycode to be fired.");
     }
-    b = { altKey: this.isPressed(bot.Keyboard.Keys.ALT), ctrlKey: this.isPressed(bot.Keyboard.Keys.CONTROL), metaKey: this.isPressed(bot.Keyboard.Keys.META), shiftKey: this.isPressed(bot.Keyboard.Keys.SHIFT), keyCode: b.code, charCode: b.character && a == bot.events.EventType.KEYPRESS ? this.getChar_(b).charCodeAt(0) : 0, preventDefault: !!c };
+    b = { altKey: this.isPressed(bot.Keyboard.Keys.ALT), ctrlKey: this.isPressed(bot.Keyboard.Keys.CONTROL), metaKey: this.isPressed(bot.Keyboard.Keys.META), shiftKey: this.isPressed(bot.Keyboard.Keys.SHIFT), key: b.key, keyCode: b.code, charCode: b.character && a == bot.events.EventType.KEYPRESS ? this.getChar_(b).charCodeAt(0) : 0, preventDefault: !!c };
     return this.fireKeyboardEvent(a, b);
 };
 bot.Keyboard.prototype.moveCursor = function(a) {
